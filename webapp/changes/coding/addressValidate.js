@@ -22,8 +22,10 @@ sap.ui.define(
                     let manageBPStreet = sap.ui.getCore().byId("mdm.md.businesspartner.manage::sap.suite.ui.generic.template.ObjectPage.view.Details::C_BusinessPartner--com.sap.vocabularies.UI.v1.FieldGroup::stdaddress1::to_BusinessPartnerAddrFilter::CustomerSupplierStreetName::Field");
                     let manageBPPostalCode = sap.ui.getCore().byId("mdm.md.businesspartner.manage::sap.suite.ui.generic.template.ObjectPage.view.Details::C_BusinessPartner--com.sap.vocabularies.UI.v1.FieldGroup::stdaddress1::to_BusinessPartnerAddrFilter::PostalCode::Field");
                     let manageBPCity = sap.ui.getCore().byId("mdm.md.businesspartner.manage::sap.suite.ui.generic.template.ObjectPage.view.Details::C_BusinessPartner--com.sap.vocabularies.UI.v1.FieldGroup::stdaddress1::to_BusinessPartnerAddrFilter::CustomerSupplierCityName::Field");
-                    let manageBPRegion = sap.ui.getCore().byId("mdm.md.businesspartner.manage::sap.suite.ui.generic.template.ObjectPage.view.Details::C_BusinessPartner--to_BusinessPartnerAddrFilter::com.sap.vocabularies.UI.v1.FieldGroup::stdaddress2::Country::Field");
-
+                    let manageBPRegion = sap.ui.getCore().byId("mdm.md.businesspartner.manage::sap.suite.ui.generic.template.ObjectPage.view.Details::C_BusinessPartner--to_BusinessPartnerAddrFilter::com.sap.vocabularies.UI.v1.FieldGroup::stdaddress2::Region::Field-input");
+                    let manageBPHouseNo = sap.ui.getCore().byId("mdm.md.businesspartner.manage::sap.suite.ui.generic.template.ObjectPage.view.Details::C_BusinessPartner--com.sap.vocabularies.UI.v1.FieldGroup::stdaddress1::to_BusinessPartnerAddrFilter::HouseNumber::Field-input");
+                    let manageBPPostBox = sap.ui.getCore().byId("mdm.md.businesspartner.manage::sap.suite.ui.generic.template.ObjectPage.view.Details::C_BusinessPartner--to_BusinessPartnerAddrFilter::com.sap.vocabularies.UI.v1.FieldGroup::stdaddress3::POBox::Field-input");
+                    let manageBPPoBoxLobby = sap.ui.getCore().byId("mdm.md.businesspartner.manage::sap.suite.ui.generic.template.ObjectPage.view.Details::C_BusinessPartner--to_BusinessPartnerAddrFilter::com.sap.vocabularies.UI.v1.FieldGroup::stdaddress3::POBoxPostalCode::Field-input");
                     return new Promise((resolve, reject) => {
                         debugger;
                         if (!manageBPStreet?.getValue()) {
@@ -38,6 +40,9 @@ sap.ui.define(
                         } else if (!manageBPRegion?.getValue()) {
                             MessageToast.error("Region is not Empty.");
                             reject;
+                        } else if (!manageBPHouseNo?.getValue()) {
+                            MessageToast.error("House No is not Empty.");
+                            reject;
                         } else {
                             debugger;
                             let manageRegion = manageBPRegion?.getValue();
@@ -45,11 +50,10 @@ sap.ui.define(
                             const oPostalCode = manageBPPostalCode?.getValue();
                             const oRegion = manageRegion.match(/\((.*?)\)/);
                             const oCity = manageBPCity?.getValue();
-                            // var aFilter = [];
-                            // aFilter.push(new Filter("City", FilterOperator.EQ, oCity));
-                            // aFilter.push(new Filter("PostalCode", FilterOperator.EQ, oPostalCode));
-                            // aFilter.push(new Filter("Region", FilterOperator.EQ, oRegion[1]));
-                            // aFilter.push(new Filter("Street", FilterOperator.EQ, oStreet));
+                            const oHouseNo = manageBPHouseNo?.getValue();
+                            const oPostBox = manageBPPostBox?.getValue();
+                            const oPoBoxLobby = manageBPPoBoxLobby?.getValue();
+
                             var oModel = this.getView().getModel("customer.oData");
                             oModel.callFunction("/AddressValidation", {
                                 method: "GET",
@@ -57,39 +61,31 @@ sap.ui.define(
                                     City: oCity,
                                     PostalCode: oPostalCode,
                                     Region: oRegion[1],
-                                    Street: oStreet
+                                    Street: oStreet,
+                                    HouseNo: oHouseNo,
+                                    PoBox: oPostBox,
+                                    PoBoxLobby: oPoBoxLobby
                                 },
                                 success: function (response) {
                                     debugger;
-                                    //var oJsonModel = new sap.ui.model.json.JSONModel(response.data);
-                                    MessageBox.success(response.AddressValidation.Result);
-                                    resolve;
+                                    if (response.AddressValidation.Correction === "") {
+                                        MessageBox.success(response.AddressValidation.Result);
+                                        resolve;
+                                    }
+                                    else if (response.AddressValidation.Correction !== "") {
+                                        MessageBox.error(response.AddressValidation.Correction);
+                                        reject;
+                                    }
+
                                 },
                                 error: (oError) => {
                                     debugger;
                                     MessageBox.error(JSON.parse(oError.responseText).error.message.value);
                                     reject;
                                 }
-                            });
-                            // var mParameters = {
-                            //     method: "GET",
-                            //     success: function (oData) {
-                            //         debugger;
-                            //         var oJsonModel = new sap.ui.model.json.JSONModel(oData);
-                            //         MessageToast.show(oJsonModel);
-                            //         reject;
-                            //     }.bind(this),
-                            //     error: function (oError) {
-                            //         debugger;
-                            //         MessageBox.error(JSON.parse(oError.responseText).error.message.value);
-                            //         reject;
-                            //     }.bind(this)
-                            // };
-                            // oModel.read("/AddressValidation?City='" + oCity + "'&PostalCode='" + oPostalCode + "'&Region='" + oRegion[1] + "'&Street='" + oStreet + "'", mParameters);
-                            // MessageToast.show("Street is Existed.");
-                            // reject;
+                            });                           
                         }
-                    })
+                    });
                 }
             }
             // metadata: {
